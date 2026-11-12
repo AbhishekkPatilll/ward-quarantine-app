@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WardFlow – Quarantine & Treatment Facility</title>
+<style>
+:root{--bg:#E4EBF2;--card:#F4F7FA;--ink:#1B2B3A;--mut:#5C6E7E;--line:#CAD5DF;--pri:#1F5C7A;--pri2:#D6E6EF;--ok:#2E7D5B;--okb:#D9EDE3;--warn:#B7791F;--warnb:#F6E8C9;--bad:#B3392F;--badb:#F4D9D5;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+header{background:var(--pri);color:#EAF3F8;padding:12px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header b{font-size:18px;letter-spacing:.2px}header small{opacity:.8;margin-left:8px}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button{background:transparent;color:#EAF3F8;border:1px solid rgba(255,255,255,.35);padding:8px 14px;border-radius:8px;cursor:pointer;font:inherit}
+nav button.on{background:var(--card);color:var(--pri);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:18px 16px 40px}
+h2{margin:0 0 4px;font-size:20px}h3{margin:0 0 10px;font-size:16px}
+.sub{color:var(--mut);margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.grid{display:grid;gap:16px}.g2{grid-template-columns:1fr 1.2fr}.g4{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+@media(max-width:760px){.g2{grid-template-columns:1fr}}
+.kpi{border-left:4px solid var(--pri);padding-left:12px}.kpi b{font-size:26px;display:block}.kpi span{color:var(--mut);font-size:13px}
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.row:last-child{border:0}.row .n{flex:1;min-width:140px}.row .n small{display:block;color:var(--mut)}
+.room{background:var(--pri2);color:var(--pri);font-weight:600;border-radius:6px;padding:3px 8px;font-size:13px}
+input,textarea,select{font:inherit;padding:10px;border:1px solid var(--line);border-radius:8px;background:#FAFBFC;color:var(--ink);width:100%}
+input.t{width:90px}
+button.b{background:var(--pri);color:#fff;border:0;border-radius:8px;padding:10px 16px;font:inherit;cursor:pointer;min-height:42px}
+button.b.s{background:var(--pri2);color:var(--pri)}button.b.d{background:var(--bad)}button.b.g{background:var(--ok)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.pill{border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600;background:var(--pri2);color:var(--pri)}
+.pill.ok{background:var(--okb);color:var(--ok)}.pill.warn{background:var(--warnb);color:var(--warn)}.pill.bad{background:var(--badb);color:var(--bad)}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok)}
+.beds{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px}
+.bed{border-radius:6px;padding:6px 0;text-align:center;font-size:12px;font-weight:600;background:#CBD5DE;color:#3D4F5F}
+.bed.free{background:var(--okb);color:var(--ok);border:1px dashed var(--ok)}.bed.el{background:var(--warnb);color:var(--warn)}.bed.sg{background:#BFE0D2;color:var(--ok)}
+.sel{background:var(--pri2);margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:8px}
+.lbl{font-size:13px;color:var(--mut);margin:10px 0 4px;display:block}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;z-index:9;max-width:90%}
+.toast.e{background:var(--bad)}
+.empty{color:var(--mut);padding:18px 0;text-align:center}
+</style></head><body>
+<header><div><b>WardFlow</b><small id="dl"></small></div><nav id="nav"></nav></header>
+<main id="app"></main><div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);
+let day=5,role='nurse',sel=null,armed=null,missed=0,flash=null,overrides=0;
+const base={cured:17,dead:3};
+let s=7;const rnd=()=>(s=s*16807%2147483647)/2147483647;
+const FN=['Aarav','Diya','Rohan','Meera','Kabir','Anaya','Vihaan','Isha','Arjun','Sana','Neel','Tara','Ishaan','Kavya','Dev','Riya','Aditya','Nisha','Yash','Pooja'];
+const LN=['Patil','Sharma','Deshmukh','Joshi','Khan','Iyer','More','Kulkarni','Singh','Pawar','Shah'];
+const r1=x=>Math.round(x*10)/10,ok=()=>36.5+rnd(),fv=()=>38.1+rnd()*1.7;
+const P=[];
+for(let i=0;i<74;i++){const sp=[0,0,1,1,2,2,2,3][Math.floor(rnd()*8)],t={},v={};
+ for(let d=1;d<=4;d++){t[d]={v:r1(d<=4-sp?fv():ok()),tm:'07:'+(10+i%50),by:'Nurse Rao'};v[d]='Routine review.'}
+ if(i%3==0){t[5]={v:r1(sp>=2?ok():fv()),tm:'08:'+(10+i%50),by:'Nurse Rao'};if(i%6==0)v[5]='Continue current medication.'}
+ P.push({id:'P'+(1001+i),name:FN[i%20]+' '+LN[(i*7)%11],age:22+(i*11)%50,room:i+1,st:'active',t,v,signed:false,blk:0,idn:'ID'+(5000+i)})}
+const act=()=>P.filter(p=>p.st=='active');
+function streak(p){let n=0;for(let d=day;d>=0;d--){const r=p.t[d];if(!r){if(d===day)continue;break}if(r.v>=38)break;n++}return n}
+const elig=p=>streak(p)>=3;
+function alertP(p){const r=p.t[day],q=p.t[day-1];return !!r&&(r.v>=39.5||(q&&r.v-q.v>=1.5))}
+function msg(m,e){flash={m,e};draw();setTimeout(()=>{flash=null;draw()},2600)}
+function setRole(r){role=r;sel=null;armed=null;draw()}
+function saveTemp(id){const p=P.find(x=>x.id==id),raw=$('#in'+id).value,v=parseFloat(raw);
+ if(p.t[day])return msg('Already recorded today at '+p.t[day].tm+' by '+p.t[day].by,1);
+ if(isNaN(v)||v<34||v>42)return msg('Check the value: temperature must be between 34.0 and 42.0 °C.',1);
+ p.t[day]={v:r1(v),tm:new Date().toTimeString().slice(0,5),by:'Nurse Rao'};
+ msg(p.name+': '+r1(v)+' °C saved'+(v>=38?' – fever, doctor alerted':''))}
+function saveVisit(id){const p=P.find(x=>x.id==id),n=$('#note').value.trim();
+ if(!p.t[day])return msg('Temperature not yet recorded.',1);
+ if(!n)return msg('Treatment notes are required.',1);
+ p.v[day]=n;msg('Visit logged for '+p.name)}
+function signoff(id){const p=P.find(x=>x.id==id);p.signed=true;msg('Discharge signed off. Admin has been notified.')}
+function early(id){const p=P.find(x=>x.id==id);p.signed=true;overrides++;msg('Early discharge override logged for Head Doctor review.')}
+function dead(id){if(armed!='d'+id){armed='d'+id;return draw()}const p=P.find(x=>x.id==id);p.st='deceased';armed=null;sel=null;msg(p.name+' marked deceased. Room freed.')}
+function discharge(id){const p=P.find(x=>x.id==id);if(!p.signed)return msg('Doctor sign-off is required first.',1);p.st='discharged';msg(p.name+' discharged. Room '+p.room+' is free.')}
+function admit(){const n=$('#an').value.trim(),a=$('#aa').value,i=$('#ai').value.trim(),r=+$('#ar').value;
+ if(!n||!a||!i||!r)return msg('Fill in name, age, ID and room.',1);
+ if(P.some(p=>p.idn==i&&p.st=='active'))return msg('Warning: an active patient already has this ID.',1);
+ P.push({id:'P'+(1001+P.length),name:n,age:+a,room:r,st:'active',t:{},v:{},signed:false,blk:0,idn:i});msg(n+' admitted to room '+r)}
+function nextDay(){missed+=act().filter(p=>!p.t[day]).length;act().forEach(p=>{if(elig(p))p.blk++});day++;armed=null;msg('Day '+day+' started. Missing readings were flagged as Missed.')}
+const closed=()=>{const c=base.cured+P.filter(p=>p.st=='discharged').length,d=base.dead+P.filter(p=>p.st=='deceased').length;return{c,d,n:c+d,r:d/(c+d)*100}};
+function chart(p){let o='<svg viewBox="0 0 300 90" width="100%"><line x1="10" x2="290" y1="'+(80-(38-35)/6*70)+'" y2="'+(80-(38-35)/6*70)+'" stroke="#B3392F" stroke-dasharray="4"/>';
+ const ds=Object.keys(p.t).map(Number).sort((a,b)=>a-b);
+ ds.forEach((d,k)=>{const x=20+k*(260/Math.max(ds.length-1,1)),y=80-(Math.min(Math.max(p.t[d].v,35),41)-35)/6*70;
+  if(k)o+='<line x1="'+(20+(k-1)*(260/Math.max(ds.length-1,1)))+'" y1="'+(80-(Math.min(Math.max(p.t[ds[k-1]].v,35),41)-35)/6*70)+'" x2="'+x+'" y2="'+y+'" stroke="#1F5C7A"/>';
+  o+='<circle cx="'+x+'" cy="'+y+'" r="4" fill="'+(p.t[d].v>=38?'#B3392F':'#2E7D5B')+'"/><text x="'+x+'" y="89" font-size="8" text-anchor="middle" fill="#5C6E7E">D'+d+'</text>'});
+ return o+'</svg>'}
+function nurse(){const a=act(),pend=a.filter(p=>!p.t[day]),done=a.length-pend.length;
+ return `<h2>Today’s temperatures</h2><p class="sub">Record one reading per patient. Saved patients leave this list straight away.</p>
+ <div class="card"><b>${done} of ${a.length} done</b><div class="bar" style="margin-top:8px"><i style="width:${done/a.length*100}%"></i></div></div>
+ <div class="card"><h3>Pending (${pend.length})</h3>${pend.length?pend.sort((x,y)=>x.room-y.room).slice(0,15).map(p=>`<div class="row"><span class="room">Room ${p.room}</span><div class="n">${p.name}<small>${p.id} · ${p.age} yrs${p.t[day-1]?' · yesterday '+p.t[day-1].v+' °C':''}</small></div><input class="t" id="in${p.id}" type="number" step="0.1" placeholder="°C" inputmode="decimal"><button class="b" onclick="saveTemp('${p.id}')">Save</button></div>`).join('')+(pend.length>15?`<p class="sub">Showing the first 15 rooms of ${pend.length}.</p>`:''):'<div class="empty">All temperatures done for today.</div>'}</div>`}
+function doctor(){const a=act().map(p=>({p,rk:!p.t[day]?3:alertP(p)?0:p.v[day]?2:1})).sort((x,y)=>x.rk-y.rk||x.p.room-y.p.room);
+ const lab=['High alert','Ready for visit','Visited','Waiting for nurse'],cl=['bad','ok','','warn'];
+ const list=a.slice(0,40).map(({p,rk})=>`<div class="row ${sel==p.id?'sel':''}" style="cursor:pointer" onclick="sel='${p.id}';armed=null;draw()"><span class="room">${p.room}</span><div class="n">${p.name}<small>Streak ${streak(p)}/3${elig(p)?' · eligible':''}</small></div><span class="pill ${cl[rk]}">${lab[rk]}</span></div>`).join('');
+ const p=P.find(x=>x.id==sel&&x.st=='active');let det='<div class="empty">Select a patient to see the timeline.</div>';
+ if(p){const r=p.t[day],st=streak(p);det=`<h3>${p.name} · Room ${p.room}</h3><p class="sub">${p.age} yrs · ${p.id}</p>${chart(p)}
+ <p>Fever-free streak: <b>${st} of 3 days</b> ${elig(p)?'<span class="pill ok">Eligible for discharge</span>':''} ${alertP(p)?'<span class="pill bad">High alert</span>':''}</p>
+ <p class="sub">Today: ${r?r.v+' °C at '+r.tm+' by '+r.by:'not yet measured'}</p>
+ ${p.v[day]?`<p><b>Visit logged:</b> ${p.v[day]}</p>`:`<span class="lbl">Treatment notes</span><textarea id="note" rows="3" placeholder="Treatment, medication, status"></textarea><div style="margin-top:10px"><button class="b" ${r?'':'disabled'} onclick="saveVisit('${p.id}')" title="${r?'':'Temperature not yet recorded.'}">Log visit</button> ${r?'':'<span class="sub">Temperature not yet recorded.</span>'}</div>`}
+ <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">${p.signed?'<span class="pill ok">Discharge signed off</span>':elig(p)?`<button class="b g" onclick="signoff('${p.id}')">Sign off discharge</button>`:`<button class="b s" onclick="early('${p.id}')">Early discharge (override)</button>`}
+ <button class="b d" onclick="dead('${p.id}')">${armed=='d'+p.id?'Click again to confirm':'Mark deceased'}</button></div>`}
+ return `<h2>Doctor’s round</h2><p class="sub">High-alert patients first. Visits unlock once today’s temperature exists.</p><div class="grid g2"><div class="card" style="max-height:620px;overflow:auto">${list}</div><div class="card">${det}</div></div>`}
+function admin(){const a=act(),used=new Set(a.map(p=>p.room)),free=[];for(let i=1;i<=74;i++)if(!used.has(i))free.push(i);
+ const q=a.filter(elig);
+ const map=Array.from({length:74},(_,i)=>{const p=a.find(x=>x.room==i+1);return `<div class="bed ${!p?'free':p.signed&&elig(p)?'sg':elig(p)?'el':''}" title="${p?p.name:'Free'}">${i+1}</div>`}).join('');
+ return `<h2>Beds and admissions</h2><p class="sub">${a.length} of 74 beds occupied.</p>
+ <div class="card"><h3>Bed map</h3><div class="beds">${map}</div><p class="sub" style="margin:10px 0 0">Green dashed: free · amber: eligible, awaiting doctor · teal: signed off · grey: occupied</p></div>
+ <div class="grid g2"><div class="card"><h3>Discharge queue (${q.length})</h3>${q.length?q.map(p=>`<div class="row"><span class="room">${p.room}</span><div class="n">${p.name}<small>${p.signed?'Doctor signed off':'Awaiting doctor sign-off'}</small></div>${p.blk?'<span class="pill warn">Bed blocked</span>':''}<button class="b g" ${p.signed?'':'disabled'} onclick="discharge('${p.id}')">Confirm discharge</button></div>`).join(''):'<div class="empty">No patients are eligible yet.</div>'}</div>
+ <div class="card"><h3>Admit patient</h3>${free.length?`<span class="lbl">Full name</span><input id="an"><span class="lbl">Age</span><input id="aa" type="number"><span class="lbl">ID number</span><input id="ai"><span class="lbl">Room</span><select id="ar">${free.map(r=>`<option>${r}</option>`).join('')}</select><div style="margin-top:12px"><button class="b" onclick="admit()">Admit patient</button></div>`:'<button class="b" disabled>No free beds</button><p class="sub">Confirm a discharge to free a room.</p>'}</div></div>`}
+function dash(){const a=act(),c=closed(),done=a.filter(p=>p.t[day]).length,vis=a.filter(p=>p.v[day]).length,vb=a.filter(p=>p.v[day]&&!p.t[day]).length;
+ const few=c.n<10,col=few?'':c.r>15?'bad':c.r>=12?'warn':'ok';
+ return `<h2>Quality dashboard</h2><p class="sub">Performance against the 85% success benchmark.</p>
+ <div class="card"><div class="grid g4"><div class="kpi"><b>${a.length}/74</b><span>Beds occupied</span></div><div class="kpi"><b>${done}/${a.length}</b><span>Temperatures today</span></div><div class="kpi"><b>${vis}/${a.length}</b><span>Doctor visits today</span></div><div class="kpi"><b>${missed}</b><span>Missed readings (past days)</span></div></div></div>
+ <div class="card"><h3>Mortality vs 15% benchmark</h3>${few?'<p>Insufficient data (fewer than 10 closed cases).</p>':`<p><span class="pill ${col}">${c.r>15?'Above benchmark':c.r>=12?'Early warning':'Within benchmark'}</span> <b style="font-size:22px">${c.r.toFixed(1)}%</b> mortality · ${(100-c.r).toFixed(1)}% success</p>`}
+ <div class="bar"><i style="width:${Math.min(c.r/30*100,100)}%;background:var(--${col||'pri'==''?'pri':col||'pri'})"></i></div><p class="sub">${c.c} cured, ${c.d} deceased, ${c.n} closed cases. Benchmark marker: 15%.</p></div>
+ <div class="card"><h3>Process checks</h3><p>Visits before temperature: <b>${vb}</b> (target 0) · Early discharge overrides: <b>${overrides}</b> · Bed-blocked patients: <b>${a.filter(p=>p.blk).length}</b></p></div>`}
+function draw(){const R={nurse:['Nurse',nurse],doctor:['Doctor',doctor],admin:['Admin',admin],head:['Head Doctor',dash]};
+ $('#nav').innerHTML=Object.keys(R).map(k=>`<button class="${role==k?'on':''}" onclick="setRole('${k}')">${R[k][0]}</button>`).join('')+'<button onclick="nextDay()">Simulate next day</button>';
+ $('#dl').textContent='Day '+day;$('#app').innerHTML=R[role][1]();
+ $('#toast').innerHTML=flash?`<div class="toast ${flash.e?'e':''}">${flash.m}</div>`:''}
+draw();
+</script></body></html>
